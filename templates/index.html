@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>储能系统经济性分析计算器</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+    <h1>储能系统经济性分析计算器</h1>
+    
+        <!-- 输入参数区域 -->
+        <div class="section-title">输入参数</div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="basic-params">基本参数</div>
+            <div class="tab" data-tab="price-params">电价参数</div>
+            <div class="tab" data-tab="operation-params">运营参数</div>
+            <div class="tab" data-tab="load-analysis">负荷分析</div>
+        </div>
+        
+        <!-- 基本参数 -->
+        <div class="tab-content active" id="basic-params">
+            <div class="card">
+                <div class="card-body">
+                    <div class="input-section">
+                        <div class="param-group">
+                            <h4>系统规格</h4>
+                            <div class="param-description">
+                                <p>请选择储能柜数量和型号规格，系统将自动计算总功率、容量和储能时长。</p>
+                            </div>
+                            <div class="input-group">
+                                <label>储能柜数量:</label>
+                                <input type="number" id="cabinet_count" value="2" min="1">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>单柜功率(kW):</label>
+                                <select id="single_cabinet_power">
+                                    <option value="100">100kW</option>
+                                    <option value="125" selected>125kW</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>单柜容量(kWh):</label>
+                                <select id="single_cabinet_capacity">
+                                    <option value="215">215kWh</option>
+                                    <option value="232">232kWh</option>
+                                    <option value="261" selected>261kWh</option>
+                                </select>
+                            </div>
+                            
+    <div class="input-group">
+        <label>总投资(元):</label>
+        <input type="number" id="capex" value="520000">
+    </div>
+    
+    <div class="input-group">
+                                <label>总功率(kW):</label>
+                                <input type="number" id="power" value="250" readonly class="calculated-field">
+    </div>
+    
+    <div class="input-group">
+        <label>储能时长(h):</label>
+                                <input type="number" id="energy" value="2" readonly class="calculated-field">
+    </div>
+    
+    <div class="input-group">
+                                <label>总容量(kWh):</label>
+                                <input type="number" id="energy_capacity" value="522" readonly class="calculated-field">
+                            </div>
+    </div>
+    
+                        <div class="param-group">
+                            <h4>效率参数</h4>
+    <div class="input-group">
+        <label>充电效率(%):</label>
+        <input type="number" step="0.1" id="charging_efficiency" value="95">
+    </div>
+    
+    <div class="input-group">
+        <label>放电效率(%):</label>
+        <input type="number" step="0.1" id="discharging_efficiency" value="95">
+    </div>
+    
+    <div class="input-group">
+        <label>系统循环效率(%):</label>
+        <span id="system_efficiency" class="display-only">90.25</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+    
+        <!-- 电价参数 -->
+        <div class="tab-content" id="price-params">
+            <div class="card">
+                <div class="card-body">
+                    <div class="price-inputs">
+                        <div class="price-group">
+                            <label>需量电价(元/kW·月):</label>
+                            <input type="number" step="0.1" id="demand_charge_rate" value="38.8">
+                            <div class="enable-option" style="margin-top: 5px;">
+                                <input type="checkbox" id="enable_demand_charge">
+                                <label for="enable_demand_charge">启用需量电费计算</label>
+                                <div class="param-description">
+                                    <p>启用后将计算储能系统对需量电费的影响，并纳入经济性指标计算</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="price-group">
+                            <label>尖峰电价(元/kWh):</label>
+                            <input type="number" step="0.01" id="price_sharp_peak" value="1.2">
+                            <div class="time-range">
+                                <label>时间段1:</label>
+                                <input type="time" id="sharp_peak_start" value="17:00">
+                                <span>至</span>
+                                <input type="time" id="sharp_peak_end" value="21:00">
+                            </div>
+                            <div class="time-range optional-time">
+                                <input type="checkbox" id="sharp_peak_enable_2">
+                                <label>时间段2:</label>
+                                <input type="time" id="sharp_peak_start_2" value="14:00" disabled>
+                                <span>至</span>
+                                <input type="time" id="sharp_peak_end_2" value="16:00" disabled>
+                            </div>
+                        </div>
+                        
+                        <div class="price-group">
+                            <label>峰电价(元/kWh):</label>
+                            <input type="number" step="0.01" id="price_peak" value="1.0">
+                            <div class="time-range">
+                                <label>时间段1:</label>
+                                <input type="time" id="peak_start" value="21:00">
+                                <span>至</span>
+                                <input type="time" id="peak_end" value="23:00">
+                            </div>
+                            <div class="time-range optional-time">
+                                <input type="checkbox" id="peak_enable_2">
+                                <label>时间段2:</label>
+                                <input type="time" id="peak_start_2" value="12:00" disabled>
+                                <span>至</span>
+                                <input type="time" id="peak_end_2" value="14:00" disabled>
+                            </div>
+                        </div>
+                        
+                        <div class="price-group">
+                            <label>平电价(元/kWh):</label>
+                            <input type="number" step="0.01" id="price_flat" value="0.6">
+                            <div class="time-range">
+                                <label>时间段1:</label>
+                                <input type="time" id="flat_start" value="00:00">
+                                <span>至</span>
+                                <input type="time" id="flat_end" value="10:00">
+                            </div>
+                            <div class="time-range optional-time">
+                                <input type="checkbox" id="flat_enable_2" checked>
+                                <label>时间段2:</label>
+                                <input type="time" id="flat_start_2" value="16:00">
+                                <span>至</span>
+                                <input type="time" id="flat_end_2" value="17:00">
+                            </div>
+                            <div class="time-range optional-time">
+                                <input type="checkbox" id="flat_enable_3" checked>
+                                <label>时间段3:</label>
+                                <input type="time" id="flat_start_3" value="23:00">
+                                <span>至</span>
+                                <input type="time" id="flat_end_3" value="00:00">
+                            </div>
+                        </div>
+                        
+                        <div class="price-group">
+                            <label>谷电价(元/kWh):</label>
+                            <input type="number" step="0.01" id="price_valley" value="0.4">
+                            <div class="time-range">
+                                <label>时间段1:</label>
+                                <input type="time" id="valley_start" value="10:00">
+                                <span>至</span>
+                                <input type="time" id="valley_end" value="11:00">
+                            </div>
+                            <div class="time-range optional-time">
+                                <input type="checkbox" id="valley_enable_2" checked>
+                                <label>时间段2:</label>
+                                <input type="time" id="valley_start_2" value="15:00">
+                                <span>至</span>
+                                <input type="time" id="valley_end_2" value="16:00">
+                            </div>
+                        </div>
+                        
+                        <div class="price-group">
+                            <label>深谷电价(元/kWh):</label>
+                            <input type="number" step="0.01" id="price_deep_valley" value="0.2">
+                            <div class="time-range">
+                                <label>时间段1:</label>
+                                <input type="time" id="deep_valley_start" value="11:00">
+                                <span>至</span>
+                                <input type="time" id="deep_valley_end" value="15:00">
+                            </div>
+                            <div class="time-range optional-time">
+                                <input type="checkbox" id="deep_valley_enable_2">
+                                <label>时间段2:</label>
+                                <input type="time" id="deep_valley_start_2" value="22:00" disabled>
+                                <span>至</span>
+                                <input type="time" id="deep_valley_end_2" value="00:00" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="price_time_chart" style="width: 100%; height: 300px; margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 运营参数 -->
+        <div class="tab-content" id="operation-params">
+            <div class="card">
+                <div class="card-body">
+                    <div class="input-section">
+            <div class="param-group">
+                            <h4>充放电策略</h4>
+                            <div class="input-group">
+                <label>充放电模式:</label>
+                <select id="charge_discharge_mode">
+                    <option value="single">一充一放</option>
+                    <option value="double">两充两放</option>
+                </select>
+            </div>
+
+            <!-- 一充一放模式的选择 -->
+            <div id="single_mode_options" class="mode-options">
+                <div class="charge-discharge-select">
+                    <div class="select-group">
+                        <label>充电电价选择:</label>
+                        <select id="single_charge_price">
+                            <option value="deep_valley">深谷电价</option>
+                            <option value="valley">谷电价</option>
+                            <option value="flat">平电价</option>
+                            <option value="peak">峰电价</option>
+                            <option value="sharp_peak">尖峰电价</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label>放电电价选择:</label>
+                        <select id="single_discharge_price">
+                            <option value="sharp_peak">尖峰电价</option>
+                            <option value="peak">峰电价</option>
+                            <option value="flat">平电价</option>
+                            <option value="valley">谷电价</option>
+                            <option value="deep_valley">深谷电价</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 两充两放模式的选择 -->
+            <div id="double_mode_options" class="mode-options" style="display: none;">
+                <div class="charge-discharge-select">
+                    <div class="select-group">
+                        <label>第一次充电电价:</label>
+                        <select id="first_charge_price">
+                            <option value="deep_valley">深谷电价</option>
+                            <option value="valley">谷电价</option>
+                            <option value="flat">平电价</option>
+                            <option value="peak">峰电价</option>
+                            <option value="sharp_peak">尖峰电价</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label>第一次放电电价:</label>
+                        <select id="first_discharge_price">
+                            <option value="sharp_peak">尖峰电价</option>
+                            <option value="peak">峰电价</option>
+                            <option value="flat">平电价</option>
+                            <option value="valley">谷电价</option>
+                            <option value="deep_valley">深谷电价</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label>第二次充电电价:</label>
+                        <select id="second_charge_price">
+                            <option value="valley">谷电价</option>
+                            <option value="deep_valley">深谷电价</option>
+                            <option value="flat">平电价</option>
+                            <option value="peak">峰电价</option>
+                            <option value="sharp_peak">尖峰电价</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label>第二次放电电价:</label>
+                        <select id="second_discharge_price">
+                            <option value="sharp_peak">尖峰电价</option>
+                            <option value="peak">峰电价</option>
+                            <option value="flat">平电价</option>
+                            <option value="valley">谷电价</option>
+                            <option value="deep_valley">深谷电价</option>
+                        </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+                        <div class="param-group">
+                            <h4>经济参数</h4>
+    <div class="input-group">
+        <label>年充放电次数:</label>
+        <input type="number" id="cycles_per_year" value="300">
+    </div>
+    
+    <div class="input-group">
+        <label>运营年限:</label>
+        <input type="number" id="operation_years" value="15">
+    </div>
+    
+    <div class="input-group">
+        <label>贴现率:</label>
+        <input type="number" step="0.01" id="discount_rate" value="0.08">
+    </div>
+    
+    <div class="input-group">
+        <label>年运维成本比例(%):</label>
+        <input type="number" step="0.01" id="opex_percent" value="2">
+    </div>
+    
+    <div class="input-group">
+        <label>年维护费用(元):</label>
+        <span id="calculated_maintenance_cost" class="display-only">10400</span>
+    </div>
+    
+    <div class="input-group">
+        <label>电池循环寿命(次):</label>
+        <input type="number" id="battery_cycle_life" value="6000">
+    </div>
+    
+    <div class="input-group">
+        <label>电池更换成本(元):</label>
+        <input type="number" id="battery_replacement_cost" value="100000">
+    </div>
+    
+    <div class="input-group">
+        <label>维护成本年增长率(%):</label>
+        <input type="number" step="0.1" id="maintenance_cost_growth_rate" value="5">
+    </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 负荷分析 -->
+        <div class="tab-content" id="load-analysis">
+            <div class="card">
+                <div class="card-body">
+                    <div class="input-group">
+                        <label>月均用电量(kWh):</label>
+                        <input type="number" id="monthly_consumption" value="10000">
+                    </div>
+                    
+                    <!-- 添加负荷模式选择 -->
+                    <div class="param-group" style="margin-bottom: 15px;">
+                        <h4>负荷模式选择</h4>
+                        <div class="input-group">
+                            <label>选择负荷模式:</label>
+                            <select id="load_pattern_select" class="form-control">
+                                <option value="day_evening_peak">模式一：日间和傍晚双高峰型</option>
+                                <option value="balanced">模式二：均衡负荷型</option>
+                                <option value="night_peak">模式三：夜间高峰型</option>
+                            </select>
+                        </div>
+                        <div class="pattern-description" id="pattern_description">
+                            <p><strong>模式一说明：</strong>日间和傍晚用电需求较高，凌晨时段用电量显著下降。适合商业办公、居民用户等场景。</p>
+                        </div>
+                        <div style="margin-top: 10px; text-align: center;">
+                            <button id="generate_load" class="small-button">生成示例负荷</button>
+                        </div>
+                    </div>
+                    
+                    <div class="hourly-load-inputs">
+                        <h4>每小时负荷数据 (kW)</h4>
+                        <div class="hourly-inputs-container">
+                            <!-- 24小时输入框会通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <div class="load-summary">
+                        <div class="summary-item">
+                            <label>最大负荷(kW):</label>
+                            <span id="peak_load_value" class="display-only">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <label>最小负荷(kW):</label>
+                            <span id="min_load_value" class="display-only">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <label>负荷因数(%):</label>
+                            <span id="load_factor_value" class="display-only">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <label>日总用电量(kWh):</label>
+                            <span id="daily_consumption_value" class="display-only">0</span>
+                        </div>
+        </div>
+        
+                    <div class="load-charts-container">
+                        <div id="original_load_chart" style="width: 100%; height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 计算按钮 -->
+        <div style="text-align: center;">
+            <button id="calculate-button" class="action-button">计算分析结果</button>
+        </div>
+        
+        <!-- 结果展示区域 -->
+        <div class="results" style="display: none;">
+            <div class="section-title">计算结果</div>
+            
+            <div class="tabs results-tabs">
+                <div class="tab active" data-tab="summary-tab">经济指标</div>
+                <div class="tab" data-tab="operation-data-tab">运行数据</div>
+                <div class="tab" data-tab="financial-analysis-tab">财务分析</div>
+                <div class="tab" data-tab="load-optimization-tab">负荷优化</div>
+        </div>
+        
+            <!-- 经济指标 -->
+            <div class="tab-content active" id="summary-tab">
+                <div class="card">
+                    <div class="card-header">系统经济性指标</div>
+                    <div class="card-body">
+                        <!-- 第一行：经济指标和系统参数 -->
+                        <div class="flex-container">
+                            <div class="flex-item">
+                                <div class="param-group">
+                                    <h4>经济指标</h4>
+                                    <p>NPV净现值(元): <span id="npv" class="display-only">-</span></p>
+                                    <p>IRR内部收益率(%): <span id="irr" class="display-only">-</span></p>
+                                    <p>LCOS度电成本(元/kWh): <span id="lcos" class="display-only">-</span></p>
+                                    <p>投资回收期(年): <span id="payback_period" class="display-only">-</span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-item">
+                                <div class="param-group">
+                                    <h4>系统参数</h4>
+                                    <p>系统循环效率(%): <span id="result_system_efficiency" class="display-only">-</span></p>
+                                    <p>系统额定容量(kWh): <span id="rated_capacity" class="display-only">-</span></p>
+                                    <p>系统实际可用容量(kWh): <span id="effective_capacity" class="display-only">-</span></p>
+            </div>
+        </div>
+    </div>
+
+                        <!-- 第二行：LCOS成本细分 -->
+                        <div class="flex-container">
+                            <div class="flex-item">
+                                <div class="param-group">
+                                    <h4>LCOS成本细分</h4>
+                                    <p>初始投资成本(元/kWh): <span id="initial_cost_per_kwh" class="display-only">-</span></p>
+                                    <p>运维成本(元/kWh): <span id="om_cost_per_kwh" class="display-only">-</span></p>
+                                    <p>充电成本(元/kWh): <span id="charging_cost_per_kwh" class="display-only">-</span></p>
+                                    <p>更换成本(元/kWh): <span id="replacement_cost_per_kwh" class="display-only">-</span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-item">
+                                <div class="param-group">
+                                    <h4>成本占比</h4>
+                                    <p>初始投资占比(%): <span id="initial_cost_percent" class="display-only">-</span></p>
+                                    <p>运维成本占比(%): <span id="om_cost_percent" class="display-only">-</span></p>
+                                    <p>充电成本占比(%): <span id="charging_cost_percent" class="display-only">-</span></p>
+                                    <p>更换成本占比(%): <span id="replacement_cost_percent" class="display-only">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 第三行：LCOS饼图 (单独一行) -->
+                        <div class="lcos-chart-container">
+                            <div id="lcos_pie_chart" style="height: 350px; margin-top: 20px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 运行数据 -->
+            <div class="tab-content" id="operation-data-tab">
+                <div class="card">
+                    <div class="card-header">系统运行数据</div>
+                    <div class="card-body">
+                        <div class="flex-container">
+                            <div class="flex-item">
+                                <div class="param-group">
+                                    <h4>每日运行数据</h4>
+                                    <p>日充电量(kWh): <span id="daily_charge_energy" class="display-only">-</span></p>
+                                    <p>日放电量(kWh): <span id="daily_discharge_energy" class="display-only">-</span></p>
+                                    <p>日充电成本(元): <span id="daily_charge_cost" class="display-only">-</span></p>
+                                    <p>日放电收入(元): <span id="daily_discharge_income" class="display-only">-</span></p>
+                                    <p>日净收益(元): <span id="daily_net_income" class="display-only">-</span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-item">
+                                <div class="param-group">
+                                    <h4>年度运行数据</h4>
+                                    <p>首年运行天数(天): <span id="yearly_operation_days" class="display-only">-</span></p>
+                                    <p>首年充电量(MWh): <span id="first_year_charge" class="display-only">-</span></p>
+                                    <p>首年放电量(MWh): <span id="first_year_discharge" class="display-only">-</span></p>
+                                    <p>首年充电成本(万元): <span id="first_year_charge_cost" class="display-only">-</span></p>
+                                    <p>首年放电收入(万元): <span id="first_year_discharge_income" class="display-only">-</span></p>
+                                    <p>首年净收益(万元): <span id="first_year_net_income" class="display-only">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-container">
+                            <div class="flex-item">
+                                <div class="param-group">
+                                    <h4>维护成本数据</h4>
+                                    <p>质保期内年运维成本(万元): <span id="warranty_maintenance_cost" class="display-only">-</span></p>
+                                    <p>质保期后首年运维成本(万元): <span id="first_year_after_warranty_cost" class="display-only">-</span></p>
+                                    <p>运维成本年增长率(%): <span id="maintenance_growth_rate" class="display-only">-</span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-item">
+                                <div class="param-group">
+                                    <h4>电池寿命数据</h4>
+                                    <p>预计首次更换时间(年): <span id="first_replacement_year" class="display-only">-</span></p>
+                                    <p>年循环次数: <span id="cycles_per_year_result" class="display-only">-</span></p>
+                                    <p>累计循环次数: <span id="total_cycles" class="display-only">-</span></p>
+                                    <p>当前容量百分比(%): <span id="current_capacity_percent" class="display-only">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 财务分析 -->
+            <div class="tab-content" id="financial-analysis-tab">
+                <div class="card">
+                    <div class="card-header">现金流分析</div>
+                    <div class="card-body">
+                        <div id="chart" style="width: 100%; height: 500px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 负荷优化 -->
+            <div class="tab-content" id="load-optimization-tab">
+                <div class="card">
+                    <div class="card-header">负荷优化分析</div>
+                    <div class="card-body">
+                        <!-- 这里会动态插入充放电策略信息 -->
+                        <div id="charging_discharge_info"></div>
+                        
+                        <div id="modified_load_chart" style="width: 100%; height: 400px;"></div>
+                        <div class="param-group" style="margin-top: 20px;">
+                            <h4>优化效果</h4>
+                            <div class="flex-container">
+                                <div class="flex-item">
+                                    <p>原始最大负荷(kW): <span id="original_peak_load">-</span></p>
+                                    <p>优化后最大负荷(kW): <span id="modified_peak_load">-</span></p>
+                                    <p>负荷降低量(kW): <span id="load_reduction">-</span></p>
+                                </div>
+                                <div class="flex-item">
+                                    <p>原始负荷因数(%): <span id="original_load_factor">-</span></p>
+                                    <p>优化后负荷因数(%): <span id="modified_load_factor">-</span></p>
+                                    <p>负荷因数提升(%): <span id="load_factor_improvement">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 新增需量电费计算部分 -->
+                        <div class="param-group" style="margin-top: 20px;">
+                            <h4>需量电费分析</h4>
+                            <div class="flex-container">
+                                <div class="flex-item">
+                                    <p>年度需量电费影响(元/年): <span id="annual_demand_charge_impact" class="display-only">-</span></p>
+                                    <p>每月需量电费影响(元/月): <span id="monthly_demand_charge_impact" class="display-only">-</span></p>
+                                </div>
+                                <div class="flex-item">
+                                    <div class="demand-charge-result">
+                                        <div id="demand_charge_status" class="status-box">
+                                            <div class="status-icon"></div>
+                                            <div class="status-text">需量电费分析结果</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入JavaScript文件 -->
+    <script src="/static/js/tabs.js"></script>
+    <script src="/static/js/price-time.js"></script>
+    <script src="/static/js/load-analysis.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
