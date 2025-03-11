@@ -335,6 +335,11 @@
     </div>
     
     <div class="input-group">
+        <label>电池容量年衰减率(%):</label>
+        <input type="number" step="0.1" id="capacity_degradation_rate" value="2">
+    </div>
+    
+    <div class="input-group">
         <label>电池更换成本(元):</label>
         <input type="number" id="battery_replacement_cost" value="100000">
     </div>
@@ -530,6 +535,7 @@
                                     <p>预计首次更换时间(年): <span id="first_replacement_year" class="display-only">-</span></p>
                                     <p>年循环次数: <span id="cycles_per_year_result" class="display-only">-</span></p>
                                     <p>累计循环次数: <span id="total_cycles" class="display-only">-</span></p>
+                                    <p>年容量衰减率(%): <span id="capacity_degradation_rate_result" class="display-only">-</span></p>
                                     <p>当前容量百分比(%): <span id="current_capacity_percent" class="display-only">-</span></p>
                                 </div>
                             </div>
@@ -597,11 +603,26 @@
         </div>
     </div>
 
-    <!-- 引入JavaScript文件 -->
-    <script src="/static/js/tabs.js"></script>
+    <!-- 引入JavaScript公共模块 -->
+    <script src="/static/js/common/utils.js"></script>
+    <script src="/static/js/common/tabs.js"></script>
+    <script src="/static/js/common/charts.js"></script>
+    
+    <!-- 引入储能系统模块 -->
+    <script src="/static/js/storage/calculator.js"></script>
+    <script src="/static/js/storage/charts.js"></script>
+    <script src="/static/js/storage/ui.js"></script>
+    
+    <!-- 引入原有功能模块 (后续会被替换) -->
     <script src="/static/js/price-time.js"></script>
     <script src="/static/js/load-analysis.js"></script>
-    <script src="/static/js/charts.js"></script>
     <script src="/static/js/main.js"></script>
+    
+    <!-- 光伏系统模块 (暂未启用) -->
+    <!-- 
+    <script src="/static/js/photovoltaic/calculator.js"></script>
+    <script src="/static/js/photovoltaic/charts.js"></script>
+    <script src="/static/js/photovoltaic/ui.js"></script>
+    -->
 </body>
 </html>

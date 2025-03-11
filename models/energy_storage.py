@@ -1,4 +1,8 @@
-class EnergyStorageCalculator:
+from models.common import SystemCalculator
+
+class EnergyStorageCalculator(SystemCalculator):
+    """储能系统经济性计算器"""
+    
     def __init__(self, capex, power, energy, energy_capacity, 
                  price_peak, price_sharp_peak, price_flat, price_valley, price_deep_valley,
                  operation_years, discount_rate, opex_percent, charge_discharge_mode,
@@ -6,16 +10,47 @@ class EnergyStorageCalculator:
                  battery_cycle_life, battery_replacement_cost,
                  charging_efficiency, discharging_efficiency,
                  maintenance_cost_growth_rate,
-                 # 新增参数
                  single_charge_price_type=None,
                  single_discharge_price_type=None,
                  first_charge_price_type=None,
                  first_discharge_price_type=None,
                  second_charge_price_type=None,
                  second_discharge_price_type=None):
+        """
+        初始化储能系统计算器
         
-        # 保持原有的初始化
-        self.capex = capex
+        参数:
+            capex (float): 系统初始投资
+            power (float): 系统功率 (kW)
+            energy (float): 储能时长 (h)
+            energy_capacity (float): 系统容量 (kWh)
+            price_peak, price_sharp_peak, price_flat, price_valley, price_deep_valley (float): 不同时段电价
+            operation_years (int): 系统运营年限
+            discount_rate (float): 贴现率
+            opex_percent (float): 年运维成本比例 (%)
+            charge_discharge_mode (str): 充放电模式 ('single' 或 'double')
+            capacity_degradation_rate (float): 电池容量衰减率 (%)
+            warranty_period (int): 质保期 (年)
+            maintenance_cost (float): 年度维护成本 (元)
+            battery_cycle_life (float): 电池循环寿命 (次)
+            battery_replacement_cost (float): 电池更换成本 (元)
+            charging_efficiency, discharging_efficiency (float): 充放电效率 (%)
+            maintenance_cost_growth_rate (float): 维护成本年增长率 (%)
+            single_charge_price_type, single_discharge_price_type, 
+            first_charge_price_type, first_discharge_price_type,
+            second_charge_price_type, second_discharge_price_type (str): 电价类型选择
+        """
+        # 调用基类初始化方法
+        super().__init__(
+            capex=capex,
+            operation_years=operation_years,
+            discount_rate=discount_rate,
+            maintenance_cost=maintenance_cost,
+            warranty_period=warranty_period,
+            maintenance_cost_growth_rate=maintenance_cost_growth_rate
+        )
+        
+        # 储能系统特有属性
         self.power = power
         self.energy = energy
         self.energy_capacity = energy_capacity
@@ -24,19 +59,14 @@ class EnergyStorageCalculator:
         self.price_flat = price_flat
         self.price_valley = price_valley
         self.price_deep_valley = price_deep_valley
-        self.operation_years = operation_years
-        self.discount_rate = discount_rate
         self.opex_percent = opex_percent
         self.charge_discharge_mode = charge_discharge_mode
-        self.capacity_degradation_rate = capacity_degradation_rate / 100
-        self.warranty_period = warranty_period
-        self.maintenance_cost = maintenance_cost
+        self.capacity_degradation_rate = capacity_degradation_rate / 100 if capacity_degradation_rate > 1 else capacity_degradation_rate
         self.battery_cycle_life = battery_cycle_life
         self.battery_replacement_cost = battery_replacement_cost
-        self.charging_efficiency = charging_efficiency / 100
-        self.discharging_efficiency = discharging_efficiency / 100
+        self.charging_efficiency = charging_efficiency / 100 if charging_efficiency > 1 else charging_efficiency
+        self.discharging_efficiency = discharging_efficiency / 100 if discharging_efficiency > 1 else discharging_efficiency
         self.system_efficiency = self.charging_efficiency * self.discharging_efficiency
-        self.maintenance_cost_growth_rate = maintenance_cost_growth_rate / 100
         
         # 创建电价类型到实际电价的映射
         self.price_map = {
@@ -60,7 +90,15 @@ class EnergyStorageCalculator:
         return self.price_map.get(price_type, 0)
 
     def calculate_daily_revenue(self, current_capacity):
-        """计算每日收益（考虑用户选择的电价）"""
+        """
+        计算每日收益（考虑用户选择的电价）
+        
+        参数:
+            current_capacity (float): 当前电池容量
+            
+        返回:
+            dict: 包含每日收益数据的字典
+        """
         if self.charge_discharge_mode == "single":
             # 一充一放模式
             charge_price = self.get_price_by_type(self.single_charge_price_type)
@@ -110,7 +148,15 @@ class EnergyStorageCalculator:
         return int(years_to_replacement) if years_to_replacement > 0 else float('inf')
 
     def calculate_cash_flows(self, cycles_per_year):
-        """计算现金流和详细运营数据"""
+        """
+        计算现金流和详细运营数据
+        
+        参数:
+            cycles_per_year (float): 每年充放电循环次数
+            
+        返回:
+            tuple: (现金流列表, 年收益列表, 日收益列表, 维护成本列表, 运营数据字典)
+        """
         cash_flows = []
         annual_revenues = []
         daily_revenues = []
@@ -134,13 +180,8 @@ class EnergyStorageCalculator:
                 daily_revenue = daily_data['daily_revenue']
                 annual_revenue = daily_revenue * cycles_per_year
                 
-                # 计算维护成本（质保期后开始，并逐年增长）
-                if year > self.warranty_period:
-                    years_after_warranty = year - self.warranty_period
-                    growth_factor = (1 + self.maintenance_cost_growth_rate) ** (years_after_warranty - 1)
-                    maintenance_cost = (self.maintenance_cost * growth_factor)
-                else:
-                    maintenance_cost = 0
+                # 计算维护成本（使用基类方法）
+                maintenance_cost = self.calculate_maintenance_cost(year)
                 
                 # 计算是否需要更换电池
                 total_cycles += cycles_per_year
@@ -174,7 +215,7 @@ class EnergyStorageCalculator:
             'maintenance_growth_rate': self.maintenance_cost_growth_rate,
             'first_replacement_year': self.calculate_first_replacement_year(cycles_per_year),
             'total_cycles': total_cycles,
-            'current_capacity_percent': current_capacity / self.energy_capacity if self.energy_capacity != 0 else 0.0,  # 避免除以零
+            'current_capacity_percent': current_capacity / self.energy_capacity if self.energy_capacity != 0 else 0.0,
             'capacity_percentages': capacity_percentages,
             'final_capacity': current_capacity,  # 新增此行
         }
@@ -182,23 +223,24 @@ class EnergyStorageCalculator:
         return cash_flows, annual_revenues, daily_revenues, maintenance_costs, operation_data
 
     def calculate_lcos_components(self, cycles_per_year, total_energy):
-        """计算LCOS的各个组成部分"""
+        """
+        计算LCOS的各个组成部分
+        
+        参数:
+            cycles_per_year (float): 每年循环次数
+            total_energy (float): 系统总放电量
+            
+        返回:
+            dict: LCOS组成部分数据
+        """
         years = range(1, self.operation_years + 1)
-        discount_factors = [(1 + self.discount_rate) ** -i for i in years]
+        discount_factors = self.calculate_discount_factors()
         
         # 初始投资成本
         initial_cost = self.capex
         
-        # 运维成本（考虑质保期和增长率）
-        om_costs = []
-        for year in years:
-            if year > self.warranty_period:
-                years_after_warranty = year - self.warranty_period
-                growth_factor = (1 + self.maintenance_cost_growth_rate) ** (years_after_warranty - 1)
-                om_cost = self.maintenance_cost * growth_factor
-            else:
-                om_cost = 0
-            om_costs.append(om_cost)
+        # 运维成本（使用基类方法）
+        om_costs = [self.calculate_maintenance_cost(year) for year in years]
         
         # 充电成本
         daily_charge_cost = self.calculate_daily_revenue(self.energy_capacity)['charge_cost']
@@ -240,4 +282,4 @@ class EnergyStorageCalculator:
                 'charging': pv_charging,
                 'replacement': pv_replacement
             }
-        }
+        } 

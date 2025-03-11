@@ -375,6 +375,7 @@ function updateCalculatedValues(response) {
     $('#first_replacement_year').text(response.metrics.first_replacement_year || '-');
     $('#cycles_per_year_result').text(response.metrics.cycles_per_year || '-');
     $('#total_cycles').text(response.metrics.total_cycles || '-');
+    $('#capacity_degradation_rate_result').text((response.metrics.capacity_degradation_rate || 2).toFixed(1));
     $('#current_capacity_percent').text((((response.metrics.current_capacity_percent || 0) * 100).toFixed(2)));
 }
 

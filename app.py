@@ -3,7 +3,7 @@ import plotly
 import plotly.graph_objs as go
 import json
 import numpy as np
-from models.calculator import EnergyStorageCalculator
+from models.energy_storage import EnergyStorageCalculator
 from models.financial import FinancialMetrics
 
 app = Flask(__name__)
@@ -401,6 +401,7 @@ def calculate():
             'load_reduction': load_reduction if 'load_reduction' in locals() else 0,
             'annual_demand_impact': annual_demand_impact if 'annual_demand_impact' in locals() else 0,
             'demand_charge_impacts': demand_charge_impacts,
+            'capacity_degradation_rate': float(data.get('capacity_degradation_rate', 2)),
         },
         'chart': chart,
         'lcos_pie': json.dumps(lcos_pie, cls=plotly.utils.PlotlyJSONEncoder)
